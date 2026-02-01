@@ -86,7 +86,7 @@ Install [LaTeX Workshop extension](https://marketplace.visualstudio.com/items?it
 1. `brew install --cask mactex-no-gui`
 2. Add TeX to PATH:
    - **bash/zsh:** `eval "$(/usr/libexec/path_helper)"`
-   - **other shells:** add `/usr/local/texlive/2025/bin/universal-darwin` to PATH
+   - **other shells:** add `/usr/local/texlive/YYYY/bin/universal-darwin` to PATH (replace `YYYY` with your installed TeX Live version year)
 3. Verify installation: `latexmk -pdf v1/master.tex`
 
 ### Coding Agent Limitations
