@@ -2,7 +2,7 @@
 
 **Maintain your CV at a higher level of abstraction using coding agents.**
 
-**Star** this repo to bookmark it for later. **Fork** it to start building your own agentic CV workflow.
+<video src="demo.mp4" controls="controls" muted="muted" width="600"></video>
 
 ---
 
