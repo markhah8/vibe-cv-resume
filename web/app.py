@@ -14,8 +14,11 @@ from dotenv import load_dotenv
 import openai
 import anthropic
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import json
+import PyPDF2
+from docx import Document
 
 # Load environment variables
 load_dotenv()
@@ -41,6 +44,11 @@ V1_DIR = BASE_DIR / "v1"
 MASTER_TEX = V1_DIR / "master.tex"
 PROMPTS_DIR = BASE_DIR / "prompts"
 USERS_FILE = BASE_DIR / "web" / "users.json"
+UPLOAD_FOLDER = BASE_DIR / "web" / "uploads"
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+
+# Create upload folder if not exists
+UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 # User Model
 class User(UserMixin):
@@ -223,6 +231,101 @@ Generate the optimized CV in LaTeX format. Focus on:
         print(f"AI API Error: {e}")
         return None
 
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_text_from_pdf(pdf_path):
+    """Extract text from PDF file"""
+    try:
+        with open(pdf_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+            return text.strip()
+    except Exception as e:
+        print(f"PDF extraction error: {e}")
+        return None
+
+def extract_text_from_docx(docx_path):
+    """Extract text from DOCX file"""
+    try:
+        doc = Document(docx_path)
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        return text.strip()
+    except Exception as e:
+        print(f"DOCX extraction error: {e}")
+        return None
+
+def convert_cv_to_latex(cv_text):
+    """Convert CV text to LaTeX format using AI"""
+    system_prompt = """You are an expert LaTeX CV converter. You will:
+1. Read a CV in plain text format
+2. Convert it to professional LaTeX format matching the provided template structure
+3. Return ONLY the complete LaTeX code
+
+CRITICAL: 
+- Return ONLY the LaTeX code starting with \\documentclass
+- Use the moderncv template style
+- Include all necessary packages and formatting
+- Keep the structure clean and professional
+- Extract: name, contact info, summary, experience, education, skills"""
+
+    user_prompt = f"""Convert this CV to LaTeX format:
+
+CV TEXT:
+{cv_text}
+
+Generate a complete LaTeX CV using moderncv style. Include:
+- Document class and packages
+- Personal information (name, email, phone, location)
+- Professional summary
+- Work experience with bullet points
+- Education
+- Skills
+- Use \\documentclass{{moderncv}} or similar professional template
+- Return ONLY the LaTeX code, no explanations"""
+
+    try:
+        if AI_PROVIDER == 'openai' and OPENAI_API_KEY:
+            client = openai.OpenAI(api_key=OPENAI_API_KEY)
+            response = client.chat.completions.create(
+                model=AI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=4000
+            )
+            return response.choices[0].message.content.strip()
+        
+        elif AI_PROVIDER == 'anthropic' and ANTHROPIC_API_KEY:
+            client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+            response = client.messages.create(
+                model=AI_MODEL if AI_MODEL.startswith('claude') else 'claude-3-sonnet-20240229',
+                max_tokens=4000,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_prompt}
+                ]
+            )
+            return response.content[0].text.strip()
+        
+        return None
+    
+    except Exception as e:
+        print(f"AI conversion error: {e}")
+        return None
+
+def get_user_master_tex(user_id):
+    """Get user's personal master.tex path, or default if not exists"""
+    user_master = V1_DIR / f"user_{user_id}_master.tex"
+    if user_master.exists():
+        return user_master
+    return MASTER_TEX
+
 def compile_cv_internal(folder_name):
     """Internal function to compile CV (used by auto-optimize)"""
     variant_dir = V1_DIR / folder_name
@@ -355,6 +458,83 @@ def logout():
     flash('You have been logged out successfully.', 'success')
     return redirect(url_for('login'))
 
+@app.route('/api/upload-cv', methods=['POST'])
+@login_required
+def upload_cv():
+    """Upload user's CV (PDF/DOC) and convert to LaTeX master"""
+    try:
+        # Check if file is present
+        if 'cv_file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        
+        file = request.files['cv_file']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Only PDF and DOC/DOCX files are allowed'}), 400
+        
+        # Save file temporarily
+        filename = secure_filename(file.filename)
+        file_ext = filename.rsplit('.', 1)[1].lower()
+        temp_file_path = UPLOAD_FOLDER / f"user_{current_user.id}_{filename}"
+        file.save(temp_file_path)
+        
+        # Extract text from file
+        if file_ext == 'pdf':
+            cv_text = extract_text_from_pdf(temp_file_path)
+        else:  # doc or docx
+            cv_text = extract_text_from_docx(temp_file_path)
+        
+        if not cv_text:
+            temp_file_path.unlink()  # Clean up
+            return jsonify({'error': 'Failed to extract text from file'}), 500
+        
+        # Convert to LaTeX using AI
+        if not (OPENAI_API_KEY or ANTHROPIC_API_KEY):
+            temp_file_path.unlink()
+            return jsonify({'error': 'AI API key not configured'}), 500
+        
+        latex_content = convert_cv_to_latex(cv_text)
+        
+        if not latex_content:
+            temp_file_path.unlink()
+            return jsonify({'error': 'Failed to convert CV to LaTeX format'}), 500
+        
+        # Clean LaTeX content (remove markdown blocks if present)
+        if '```latex' in latex_content:
+            latex_content = latex_content.split('```latex')[1].split('```')[0].strip()
+        elif '```' in latex_content:
+            latex_content = latex_content.split('```')[1].split('```')[0].strip()
+        
+        # Save as user's master.tex
+        user_master = V1_DIR / f"user_{current_user.id}_master.tex"
+        with open(user_master, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+        
+        # Clean up temp file
+        temp_file_path.unlink()
+        
+        return jsonify({
+            'success': True,
+            'message': 'CV uploaded and converted successfully',
+            'master_file': f"user_{current_user.id}_master.tex"
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/check-user-master', methods=['GET'])
+@login_required
+def check_user_master():
+    """Check if user has uploaded their own master CV"""
+    user_master = V1_DIR / f"user_{current_user.id}_master.tex"
+    return jsonify({
+        'has_master': user_master.exists(),
+        'master_file': f"user_{current_user.id}_master.tex" if user_master.exists() else None
+    })
+
 @app.route('/api/create-variant', methods=['POST'])
 @login_required
 def create_variant():
@@ -401,8 +581,9 @@ def create_variant():
         # AI Optimization (if enabled and API key available)
         if auto_optimize and (OPENAI_API_KEY or ANTHROPIC_API_KEY):
             try:
-                # Read master.tex
-                with open(MASTER_TEX, 'r', encoding='utf-8') as f:
+                # Read user's master.tex or default
+                user_master = get_user_master_tex(current_user.id)
+                with open(user_master, 'r', encoding='utf-8') as f:
                     master_tex_content = f.read()
                 
                 # Read prompt template

@@ -29,6 +29,47 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Panel - Create New Variant -->
             <div class="lg:col-span-2">
+                <!-- Upload CV Section -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-3 text-gray-800 flex items-center">
+                        <i class="fas fa-upload text-purple-600 mr-2"></i>Upload Your CV
+                        <span id="masterStatus" class="ml-3 text-sm font-normal"></span>
+                    </h2>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Upload your existing CV (PDF or DOC) to personalize all future variants. AI will convert it to the master template.
+                    </p>
+                    
+                    <form id="uploadCvForm" class="space-y-3">
+                        <div class="flex gap-3">
+                            <input 
+                                type="file" 
+                                id="cvFile" 
+                                accept=".pdf,.doc,.docx"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                            <button 
+                                type="submit" 
+                                id="uploadBtn"
+                                class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center whitespace-nowrap"
+                            >
+                                <i class="fas fa-cloud-upload-alt mr-2"></i>Upload & Convert
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i> Supported formats: PDF, DOC, DOCX (max 10MB)
+                        </p>
+                        <div id="uploadProgress" class="hidden mt-3">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-center text-blue-800">
+                                    <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                                    <span id="uploadProgressText">Processing your CV...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="uploadMessage" class="hidden mt-3"></div>
+                    </form>
+                </div>
+
                 <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                     <h2 class="text-2xl font-bold mb-4 text-gray-800">
                         <i class="fas fa-plus-circle text-green-500 mr-2"></i>Create New CV Variant
@@ -252,6 +293,92 @@
 
     <script>
         let currentFolderName = '';
+        
+        // Check user master status on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/check-user-master');
+                const data = await response.json();
+                const statusEl = document.getElementById('masterStatus');
+                
+                if (data.has_master) {
+                    statusEl.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle"></i> Custom CV uploaded</span>';
+                } else {
+                    statusEl.innerHTML = '<span class="text-gray-500"><i class="fas fa-info-circle"></i> Using default template</span>';
+                }
+            } catch (error) {
+                console.error('Error checking master status:', error);
+            }
+        });
+        
+        // Handle CV upload
+        document.getElementById('uploadCvForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('cvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showUploadMessage('Please select a file', 'error');
+                return;
+            }
+            
+            // Check file size (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                showUploadMessage('File size must be less than 10MB', 'error');
+                return;
+            }
+            
+            // Show progress
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('uploadMessage').classList.add('hidden');
+            document.getElementById('uploadBtn').disabled = true;
+            
+            const formData = new FormData();
+            formData.append('cv_file', file);
+            
+            try {
+                const response = await fetch('/api/upload-cv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showUploadMessage('✅ ' + data.message, 'success');
+                    fileInput.value = '';
+                    
+                    // Update status
+                    const statusEl = document.getElementById('masterStatus');
+                    statusEl.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle"></i> Custom CV uploaded</span>';
+                } else {
+                    showUploadMessage('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showUploadMessage('❌ Upload failed: ' + error.message, 'error');
+            } finally {
+                document.getElementById('uploadProgress').classList.add('hidden');
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        });
+        
+        function showUploadMessage(message, type) {
+            const messageArea = document.getElementById('uploadMessage');
+            const colors = {
+                success: 'bg-green-100 border-green-500 text-green-700',
+                error: 'bg-red-100 border-red-500 text-red-700',
+                info: 'bg-blue-100 border-blue-500 text-blue-700'
+            };
+            
+            messageArea.className = `p-3 border-l-4 rounded ${colors[type]}`;
+            messageArea.textContent = message;
+            messageArea.classList.remove('hidden');
+            
+            if (type === 'success') {
+                setTimeout(() => messageArea.classList.add('hidden'), 5000);
+            }
+        }
         
         // Handle form submission
         document.getElementById('createVariantForm').addEventListener('submit', async (e) => {
