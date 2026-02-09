@@ -4,11 +4,14 @@ Web interface để tự động hóa việc tạo và quản lý CV variants ch
 
 ## 🎯 Features
 
+- 📤 **Upload Your CV**: Upload existing CV (PDF/DOC) and AI converts to personalized LaTeX template
 - ✅ **Tạo CV Variants**: Nhập job description trên web, tự động tạo folder và files
+- 🤖 **AI Auto-Optimization**: GPT-4/Claude automatically tailors CV for each job
 - 📝 **Quản lý Variants**: Xem danh sách tất cả CV variants đã tạo
 - 🔧 **Compile PDF**: Compile LaTeX thành PDF ngay trên web (cần Docker)
 - 📥 **Download**: Download PDF đã compile
 - 🗑️ **Delete**: Xóa variants không cần thiết
+- 👥 **Multi-User**: Each user has isolated CVs with secure authentication
 
 ## 🚀 Quick Start
 
@@ -39,17 +42,36 @@ Truy cập: **http://localhost:5000**
 
 ## 📖 Cách sử dụng
 
+### Upload CV của bạn (Khuyên dùng)
+
+**Bước đầu tiên - Chỉ cần làm 1 lần:**
+
+1. Mở web UI (http://localhost:5000) và đăng nhập
+2. Tìm phần **"Upload Your CV"** ở đầu trang
+3. Click **"Choose File"** và chọn CV của bạn (PDF hoặc DOC/DOCX)
+4. Click **"Upload & Convert"**
+5. Đợi 20-30 giây để AI chuyển đổi CV sang LaTeX format
+6. Thấy ✅ "Custom CV uploaded" → Hoàn tất!
+
+**Lợi ích:**
+- Tất cả CV variants sau này sẽ dùng thông tin từ CV bạn đã upload
+- AI tự động extract: tên, email, kinh nghiệm, học vấn, skills
+- Không cần chỉnh sửa master.tex thủ công
+- Mỗi user có template riêng (không ảnh hưởng người khác)
+
 ### Tạo CV Variant mới
 
 1. Mở web UI (http://localhost:5000)
 2. Điền thông tin:
    - **Company Name** (bắt buộc): Tên công ty
-   - **Role Name** (tùy chọn): Tên vị trí
+   - **Role Name** (bắt buộc): Tên vị trí
    - **Job Description** (bắt buộc): Paste toàn bộ job description
-3. Click "Create Variant"
-4. Hệ thống tự động tạo:
-   - Folder: `v1/{company-role}/`
-   - File: `v1/{company-role}/job_desc.md`
+3. Click **"Create & Auto-Optimize with AI"**
+4. Hệ thống tự động:
+   - Tạo folder: `v1/{company-role}/`
+   - AI optimize CV dựa trên job description
+   - Compile LaTeX thành PDF
+   - Sau 30-60 giây → Click **Download** để tải PDF!
 
 ### Optimize CV với AI Agent
 
