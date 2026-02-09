@@ -1,7 +1,9 @@
 # Sensitive configuration files - DO NOT COMMIT
 web/.env
 web/users.json
+web/uploads/
 v1/*/.owner
+v1/user_*_master.tex
 
 # Python cache
 __pycache__/
