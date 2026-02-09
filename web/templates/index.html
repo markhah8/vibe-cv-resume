@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe CV Resume Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">
+                        <i class="fas fa-file-alt mr-3"></i>Vibe CV Resume Builder
+                    </h1>
+                    <p class="text-blue-100 text-lg">Create AI-optimized CV variants for different job applications</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('logout') }}" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel - Create New Variant -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-plus-circle text-green-500 mr-2"></i>Create New CV Variant
+                    </h2>
+                    
+                    <form id="createVariantForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Company Name <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="companyName" 
+                                required
+                                placeholder="e.g., Google, Meta, OpenAI"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Role Name <span class="text-gray-400">(optional)</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="roleName" 
+                                placeholder="e.g., Senior Software Engineer, ML Engineer"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Job Description <span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="jobDescription" 
+                                required
+                                rows="8"
+                                placeholder="Paste the full job description here..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                            ></textarea>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            id="submitBtn"
+                            class="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center"
+                        >
+                            <i class="fas fa-magic mr-2"></i>
+                            <span id="submitBtnText">Create & Auto-Optimize with AI</span>
+                        </button>
+                    </form>
+
+                    <!-- Progress Indicator -->
+                    <div id="progressArea" class="mt-6 hidden">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h3 class="font-bold text-blue-900 mb-4 flex items-center">
+                                <i class="fas fa-cog fa-spin text-blue-600 mr-2"></i>
+                                Processing Your CV...
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center text-gray-400" id="step1">
+                                    <i class="fas fa-circle text-gray-300 mr-2"></i>
+                                    <span>Creating variant folder...</span>
+                                </div>
+                                <div class="flex items-center text-gray-400" id="step2">
+                                    <i class="fas fa-circle text-gray-300 mr-2"></i>
+                                    <span>AI optimizing CV...</span>
+                                </div>
+                                <div class="flex items-center text-gray-400" id="step3">
+                                    <i class="fas fa-circle text-gray-300 mr-2"></i>
+                                    <span>Compiling PDF...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success Result with Download -->
+                    <div id="successArea" class="mt-4 hidden">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
+                                <div class="flex-1">
+                                    <h3 class="text-green-800 font-bold text-lg mb-2">CV Created Successfully!</h3>
+                                    <p class="text-green-700 mb-4" id="successMessage"></p>
+                                    <div class="flex gap-3">
+                                        <button 
+                                            onclick="downloadPDFFromSuccess()"
+                                            id="downloadBtn"
+                                            class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center"
+                                        >
+                                            <i class="fas fa-download mr-2"></i>
+                                            Download PDF
+                                        </button>
+                                        <button 
+                                            onclick="location.reload()"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+                                        >
+                                            <i class="fas fa-plus mr-2"></i>
+                                            Create Another
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success/Error Messages -->
+                    <div id="messageArea" class="mt-4 hidden"></div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
+                    <h3 class="font-bold text-blue-900 mb-3 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>How It Works
+                    </h3>
+                    <ol class="text-blue-800 space-y-2 text-sm">
+                        <li><strong>1. Fill the form:</strong> Company name and job description</li>
+                        <li><strong>2. AI optimizes:</strong> GPT-4 tailors your CV to match the role</li>
+                        <li><strong>3. Auto-compile:</strong> LaTeX generates professional PDF</li>
+                        <li><strong>4. Download:</strong> Get your optimized CV instantly!</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Right Panel - Existing Variants -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-8">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center justify-between">
+                        <span>
+                            <i class="fas fa-folder text-purple-500 mr-2"></i>CV Variants
+                        </span>
+                        <button onclick="location.reload()" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </h2>
+                    
+                    <div class="space-y-3 max-h-[600px] overflow-y-auto">
+                        {% if variants %}
+                            {% for variant in variants %}
+                            <div class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition duration-200">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ variant.company }}</h3>
+                                        <p class="text-xs text-gray-500">
+                                            <i class="fas fa-folder mr-1"></i>{{ variant.folder }}
+                                        </p>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            <i class="fas fa-calendar mr-1"></i>{{ variant.created }}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Badges -->
+                                <div class="flex gap-2 mb-3 flex-wrap">
+                                    {% if variant.has_job_desc %}
+                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                        <i class="fas fa-file-alt"></i> JD
+                                    </span>
+                                    {% endif %}
+                                    {% if variant.has_tex %}
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                        <i class="fas fa-code"></i> TEX
+                                    </span>
+                                    {% endif %}
+                                    {% if variant.has_pdf %}
+                                    <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex gap-2">
+                                    {% if variant.has_pdf %}
+                                    <button 
+                                        onclick="downloadPDF('{{ variant.folder }}')"
+                                        class="flex-1 text-xs bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded transition duration-200"
+                                    >
+                                        <i class="fas fa-download"></i> Download
+                                    </button>
+                                    {% else %}
+                                    {% if variant.has_tex %}
+                                    <button 
+                                        onclick="compileCV('{{ variant.folder }}')"
+                                        class="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded transition duration-200"
+                                    >
+                                        <i class="fas fa-cog"></i> Compile
+                                    </button>
+                                    {% else %}
+                                    <button 
+                                        disabled
+                                        class="flex-1 text-xs bg-gray-300 text-gray-500 py-2 px-3 rounded cursor-not-allowed"
+                                    >
+                                        <i class="fas fa-times"></i> No TEX
+                                    </button>
+                                    {% endif %}
+                                    {% endif %}
+                                    <button 
+                                        onclick="deleteVariant('{{ variant.folder }}')"
+                                        class="text-xs bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded transition duration-200"
+                                    >
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-8 text-gray-400">
+                                <i class="fas fa-folder-open text-4xl mb-3"></i>
+                                <p>No variants yet</p>
+                                <p class="text-sm">Create your first CV variant!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFolderName = '';
+        
+        // Handle form submission
+        document.getElementById('createVariantForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const companyName = document.getElementById('companyName').value.trim();
+            const roleName = document.getElementById('roleName').value.trim();
+            const jobDescription = document.getElementById('jobDescription').value.trim();
+            
+            if (!companyName || !jobDescription) {
+                showMessage('Please fill in required fields', 'error');
+                return;
+            }
+            
+            // Hide previous results
+            document.getElementById('messageArea').classList.add('hidden');
+            document.getElementById('successArea').classList.add('hidden');
+            
+            // Show progress
+            const submitBtn = document.getElementById('submitBtn');
+            const submitBtnText = document.getElementById('submitBtnText');
+            submitBtn.disabled = true;
+            submitBtnText.textContent = 'Processing...';
+            
+            document.getElementById('progressArea').classList.remove('hidden');
+            updateStep(1, 'loading');
+            
+            try {
+                const response = await fetch('/api/create-variant', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        company_name: companyName, 
+                        role_name: roleName, 
+                        job_description: jobDescription,
+                        auto_optimize: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentFolderName = data.folder_name;
+                    
+                    // Update progress steps
+                    updateStep(1, 'success');
+                    
+                    if (data.has_tex) {
+                        updateStep(2, 'success');
+                    }
+                    
+                    if (data.has_pdf) {
+                        updateStep(3, 'success');
+                    }
+                    
+                    // Hide progress, show success
+                    setTimeout(() => {
+                        document.getElementById('progressArea').classList.add('hidden');
+                        document.getElementById('successArea').classList.remove('hidden');
+                        document.getElementById('successMessage').textContent = data.message;
+                        
+                        // Enable/disable download based on PDF availability
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        if (!data.has_pdf) {
+                            downloadBtn.disabled = true;
+                            downloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                            downloadBtn.innerHTML = '<i class="fas fa-times mr-2"></i>PDF Not Available';
+                        }
+                        
+                        document.getElementById('createVariantForm').reset();
+                    }, 1000);
+                    
+                } else {
+                    document.getElementById('progressArea').classList.add('hidden');
+                    showMessage(`❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                document.getElementById('progressArea').classList.add('hidden');
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtnText.textContent = 'Create & Auto-Optimize with AI';
+            }
+        });
+        
+        function updateStep(stepNum, status) {
+            const step = document.getElementById(`step${stepNum}`);
+            const icon = step.querySelector('i');
+            
+            step.classList.remove('text-gray-400');
+            
+            if (status === 'loading') {
+                step.classList.add('text-blue-600');
+                icon.className = 'fas fa-circle-notch fa-spin text-blue-500 mr-2';
+            } else if (status === 'success') {
+                step.classList.add('text-green-600');
+                icon.className = 'fas fa-check-circle text-green-500 mr-2';
+            }
+            
+            // Update next step to loading
+            if (status === 'success' && stepNum < 3) {
+                updateStep(stepNum + 1, 'loading');
+            }
+        }
+        
+        function downloadPDFFromSuccess() {
+            if (currentFolderName) {
+                downloadPDF(currentFolderName);
+            }
+        }
+        
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            const colors = {
+                success: 'bg-green-100 border-green-500 text-green-700',
+                error: 'bg-red-100 border-red-500 text-red-700',
+                info: 'bg-blue-100 border-blue-500 text-blue-700'
+            };
+            
+            messageArea.className = `mt-4 p-4 border-l-4 rounded ${colors[type]}`;
+            messageArea.textContent = message;
+            messageArea.classList.remove('hidden');
+            
+            if (type === 'success') {
+                setTimeout(() => messageArea.classList.add('hidden'), 5000);
+            }
+        }
+        
+        async function compileCV(folderName) {
+            if (!confirm(`Compile CV for ${folderName}?\n\nThis requires Docker to be running.`)) return;
+            
+            showMessage('Compiling... This may take 30-60 seconds', 'info');
+            
+            try {
+                const response = await fetch('/api/compile-cv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folder_name: folderName })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('✅ CV compiled successfully!', 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showMessage(`❌ Compilation failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function downloadPDF(folderName) {
+            window.location.href = `/api/download-pdf/${folderName}`;
+        }
+        
+        async function deleteVariant(folderName) {
+            if (!confirm(`Delete variant "${folderName}"?\n\nThis action cannot be undone.`)) return;
+            
+            try {
+                const response = await fetch(`/api/delete-variant/${folderName}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('✅ Variant deleted', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(`❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

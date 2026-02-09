@@ -1,3 +1,14 @@
+# Sensitive configuration files - DO NOT COMMIT
+web/.env
+web/users.json
+v1/*/.owner
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # LaTeX auxiliary files
 *.aux
 *.fdb_latexmk
@@ -17,3 +28,14 @@
 *.blg
 *.bcf
 *.run.xml
+
+# Temporary files
+/tmp/
+nohup.out
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
