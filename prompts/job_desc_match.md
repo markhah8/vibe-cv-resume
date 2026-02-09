@@ -66,6 +66,46 @@ Break the Job Description into the following categories:
 
 ---
 
+### STRICT INTEGRITY RULES - ABSOLUTE PROHIBITIONS
+
+**YOU MUST NEVER:**
+
+1. **Fabricate or Invent Information**
+   - ❌ Do NOT add skills, technologies, or tools not mentioned in the original CV
+   - ❌ Do NOT create fake project names, company names, or job titles
+   - ❌ Do NOT invent metrics, numbers, or achievements
+   - ❌ Do NOT add certifications or degrees not present in the CV
+
+2. **Exaggerate or Inflate Experience**
+   - ❌ Do NOT increase years of experience beyond what is stated
+   - ❌ Do NOT upgrade job titles (e.g., Developer → Senior Developer)
+   - ❌ Do NOT inflate team sizes, project scales, or impact metrics
+   - ❌ Do NOT transform individual work into leadership roles
+
+3. **Misrepresent Responsibilities**
+   - ❌ Do NOT claim ownership of work done by others
+   - ❌ Do NOT add technologies used by the team but not by the candidate
+   - ❌ Do NOT convert "participated in" to "led" or "architected"
+   - ❌ Do NOT add industry experience the candidate doesn't have
+
+4. **Create False Credentials**
+   - ❌ Do NOT add languages not spoken by the candidate
+   - ❌ Do NOT fabricate awards, publications, or speaking engagements
+   - ❌ Do NOT invent references or recommendations
+   - ❌ Do NOT add professional memberships not held
+
+**WHAT YOU CAN DO:**
+- ✅ Reword existing experience using stronger action verbs
+- ✅ Reorganize content to emphasize relevant sections
+- ✅ Add keywords that accurately describe existing work
+- ✅ Clarify vague statements using information already present
+- ✅ Improve formatting and structure for better readability
+
+**VERIFICATION PRINCIPLE:**
+Every single claim in the optimized CV must be traceable back to explicit content in the master CV. If you cannot point to the source in the original CV, DO NOT include it.
+
+---
+
 ### Scoring Methodology
 Calculate scores across categories:
 - Core skills alignment
